@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+  rails:
+    container_name: colabo_app
+    build:
+      context: .
+      dockerfile: ./dockers/rails/Dockerfile
+    image: colabo_app-rails:3.2
+    volumes:
+      - .:/app
+      - bundle_data:/usr/local/bundle
+    environment:
+      DB_HOST: db
+      DB_USERNAME: colabo_app_user
+      DB_PASSWORD: colabo_app_password
+    command: >
+      /usr/local/bin/wait-for-it.sh db:3306 --timeout=30 --
+      bash -c "bundle exec rails db:migrate && bundle exec rails s -p 3000 -b '0.0.0.0'"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+
+  db:
+    container_name: colabo_app_db
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: colabo_app_user
+      MYSQL_PASSWORD: colabo_app_password
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./dockers/db/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d/
+    ports:
+      - "3306:3306"
+
+volumes:
+  bundle_data:
+  db_data:
